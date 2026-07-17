@@ -1,9 +1,17 @@
 
-path_lb_believe <- "/exchange/healthds/pQTL/BELIEVE/Working_shared/LB/lb_cis_trans_annotated.csv"
-path_lb_annot <- "/exchange/healthds/pQTL/BELIEVE/Working_shared/LB/lb_cis_trans_annotated_without_HLA.csv"
+library(tidyverse)
+library(data.table)
+
+path_lb_pipe <- "/scratch/dariush.ghasemi/projects/pqtl_conditional/results/believe_hla/combined_loci.csv"
+#path_lb_annot <- "/exchange/healthds/pQTL/BELIEVE/Working_shared/LB/mapped_LB_gp_ann_va_ann_bl_ann_collapsed_hf_ann.csv"
+path_lb_woHLA <- "/exchange/healthds/pQTL/BELIEVE/Working_shared/LB/mapped_LB_gp_ann_va_ann_bl_ann_collapsed_hf_ann_wo_HLA.csv"
+
 path_lb_out <- "/scratch/dariush.ghasemi/projects/pqtl_coloc/config/19-Nov-25_believe_loci.csv"
+path_lb_susie <- "/scratch/dariush.ghasemi/projects/pqtl_susie/config/believe_loci.csv"
 path_lb_out_cis <- "/scratch/dariush.ghasemi/projects/pqtl_coloc/config/believe_loci_cis.csv"
 path_lb_out_large <- "/scratch/dariush.ghasemi/projects/pqtl_locuszoom/conf/believe_loci_large.csv"
+path_lb_test_gnh <- "believe_loci_test_gnh.csv"
+
 plt_hist <- "26-Feb-26_histogram_loci_width_believe.png"
 plt_hla <- "26-Feb-26_histogram_loci_width_believe_HLA_comparison.png"
 plt_vioin <- "19-Nov-25_density_loci_width_believe.png"
@@ -12,16 +20,16 @@ plt_vioin <- "19-Nov-25_density_loci_width_believe.png"
 # -----    Locus Breaker   -----
 #-------------------------------#
 
-lb_believe <- fread(path_lb_believe)
-lb_believe_annot <- fread(path_lb_annot)
+lb_believe <- fread(path_lb_pipe)
+lb_believe_annot <- fread(path_lb_woHLA) %>% arrange(chr, phenotype_id)
 
 
 chop_locus <- function(df){
   
   df %>%
-    dplyr::rename(seqid = phenotype_id) %>%
+    #dplyr::rename(seqid = phenotype_id) %>%
     mutate(
-      locus = str_c(chr, "_", start, "_", end),
+      locus = str_c("chr", chr, "_", start, "_", end),
       loci_width = end - start,
       loci_cat = case_when(
         loci_width == 0 ~ "1-SNP",
@@ -43,16 +51,42 @@ lb_believe_annot <- lb_believe_annot %>% chop_locus()
 
 write.csv(lb_believe, file = path_lb_out, quote = F, row.names = F)
 
+# to run SuSiE
+lb_believe_annot %>% 
+  select(chr:cis_or_trans, loci_width, loci_cat) %>%
+  write.csv(file = path_lb_susie, quote = F, row.names = F)
+  
 
 # cis vs. trans
 lb_believe %>%
   count(loci_cat, cis_or_trans) %>%
   spread(cis_or_trans, n) %>% DT::datatable()
 
-# save cis loci
-lb_believe %>%
-  filter(cis_or_trans == "cis") %>%
+# save cis loci -- last save on 20-Apr-26
+lb_believe_annot %>%
+  dplyr::filter(cis_or_trans == "cis") %>%
+  dplyr::select(chr:cis_or_trans) %>%
+  chop_locus() %>% 
   write.csv(file = path_lb_out_cis, quote = F, row.names = F)
+
+# to test in Genes&Health TRE
+lb_believe %>%
+  filter(
+    chr %in% 21:22, 
+    !loci_cat %in% c("1-SNP", "1bp - 100Kbp")
+    ) %>% #count(loci_cat)
+  select(chr:end, SNPID, seqid, loci_cat) %>%
+  write.csv(path_lb_test_gnh, row.names = F)
+
+
+# Unique cis pQTLs to compute LD in G&H TRE
+lb_believe_annot %>% 
+  select(chr:end, cis_or_trans, loci_cat) %>%
+  distinct() %>%  # count(loci_cat)  # Ended with 4958 unique regions
+  filter(cis_or_trans == "cis") %>%
+  # filter(loci_cat=="1-SNP")        # No cis 1-SNP region exist
+  fwrite("believe/believe_loci_uniq_cis_4TRE.tsv", row.names = F, sep = "\t")
+
 
 
 #-------------------------------#
