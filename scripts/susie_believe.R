@@ -1,25 +1,112 @@
 
 
 path_susie <- "/scratch/dariush.ghasemi/projects/pqtl_susie/"
-path_cs_believe <- glue(path_susie, "results/believe/susierss/cs_list")
+path_cs_believe <- glue(path_susie, "results/believe_nomir/susierss/cs_list")
+
 path_pips <- glue(path_susie, "results/believe_test/susierss/cs_summary")
 path_pips_combined <- glue(path_susie, "results/believe_test/susierss/combined_cssums.tsv")
 
+path_pip_cslist <- glue(path_susie, "results/believe_estVarF/susierss/combined_credibles.tsv")
+
+
 #----------------------------#
-# -----   SuSiE Output  -----
+# -----      CS List    -----
 #----------------------------#
 
-# files with credible sets
-cs_lists_believe <- list.files(path = path_cs_believe, pattern = ".cslist", full.names = T)
+level_order <- c('1-SNP', '1bp-100Kbp', '100-500Kbp', '500K-1Mbp', '1-2Mbp', '2-5Mbp', '>5Mbp')
+
+
+# Credible sets
+cs_believe <- fread(path_pip_cslist)
+
+
+# Files with credible sets
+cs_lists_believe <- list.files(
+  path = path_cs_believe,
+  pattern = ".cslist",
+  full.names = T)
+
+cslist_class <- c(rep("character",3), rep("numeric",4), "character")
 
 # combine all cs files
-cs_believe <- map(cs_lists_believe, function(path) fread(path, colClasses = c(
-  rep("character",3), rep("numeric",4), "character"))) %>%
-  bind_rows()
+cs_believe <- map_dfr(cs_lists_believe, 
+                      ~ fread(.x, colClasses = cslist_class))
+
+
+#----------------------------#
+#----     CS Sumstats    ----
+#----------------------------#
+
+# Sumstats of credible sets variants along with PIP
+list_cssums <- list.files(
+  path = path_pips,
+  pattern = "seq.(\\d)+.(\\d)+_(\\d)+_(\\d)+_(\\d)+.cssum$",
+  full.names = T
+)
+
+combined_cssums <- map_dfr(list_cssums, function(path) {
+  filename <- basename(path) %>% gsub('.cssum', '', .)
+  fread(path) %>% 
+    mutate(seqid_locus = filename) %>% 
+    relocate(seqid_locus)
+}
+)
+
+# Save combined sumstats with PIP for Giulia Pontali
+fwrite(combined_cssums, file = path_pips_combined, sep = "\t")
+
+
+#----------------------------#
+# ----   Missing jobs    ----
+#----------------------------#
+
+cs_believe %>% distinct(seqid, locus) %>% dim()
+
+# Believe study loci whose job got this error:
+# Error: Estimating residual variance failed: the estimated value is negative
+lb_believe_annot %>%
+  dplyr::mutate(locus = str_c("chr", chr, "_", start, "_", end)) %>%
+  #select(seqid, locus) %>%
+  left_join(
+    cs_believe %>% summarize(nset = n(), .by = c(seqid, locus)),
+    join_by(seqid, locus)
+    ) %>%
+  dplyr::filter(is.na(nset)) %>%
+  #select(- locus, - nset) %>%
+  #write.csv("/scratch/dariush.ghasemi/projects/pqtl_susie/config/loci/believe_negative_res_var.csv", quote = F, row.names = F)
+  count(cis_or_trans, loci_cat) %>% 
+  tidyr::spread(value = n, "loci_cat") %>%
+  DT::datatable()
 
 #----------------------------#
 # -----      Counts     -----
 #----------------------------#
+
+# CS summary for modelling
+cs_believe_sum <- cs_believe %>%
+  filter(cs_id != "no_credible") %>%
+  select(- cs_snps) %>%
+  summarize(
+    n_cs   = n_distinct(cs_id),
+    n_snps = sum(ncs),
+    cs_power = mean(cs_log10bf),
+    cs_avgr2 = mean(cs_avg_r2),
+    cs_minr2 = mean(cs_min_r2),
+    .by = c(seqid, locus)
+    )
+
+### For exploration
+
+# number of pQTLs without CS
+cs_believe %>%
+  filter(cs_id == "no_credible") %>%
+  distinct(seqid, locus) %>%
+  # cis/trans annotation
+  left_join(
+    lb_believe_annot %>% select(seqid, locus, cis_or_trans),
+    join_by(seqid, locus)
+  ) %>%
+  count(cis_or_trans)
 
 # number of pQTLs (loci) with at least one credible set (CS)
 cs_believe %>%
@@ -36,15 +123,36 @@ cs_believe %>%
   count(ncs, name = "n_pQTLs")
 
 # pQTLs with >1 CS
+cs_believe %>%
+  filter(cs_id != "no_credible") %>% #head(200) %>%
+  select(- cs_snps) %>%
+  mutate(n_cs = n_distinct(cs_id), .by = c(seqid, locus)) %>%
+  mutate(secondary = n_cs > 1,
+         onesnp_cs = ncs == 1) %>%
+  #filter(onesnp_cs) %>% distinct(seqid, locus) # 2470 loci with 1-SNP CS
+  distinct(seqid, locus, secondary, onesnp_cs) %>% # 10,319 rows
+  left_join(
+    lb_believe_annot %>% select(seqid, locus, cis_or_trans),
+    join_by(seqid, locus)
+  ) %>%
+  #count(cis_or_trans, secondary) # CS=1: 362 cis, 5513 trans; CS>1: 1143 cis, 1875 trans
+  count(cis_or_trans, secondary, onesnp_cs) %>%
+  spread(secondary, n)
 
 
 # append number of CS per locus
-cs_believe_count <- cs_believe %>%
+cs_count <- cs_believe %>%
   filter(cs_id != "no_credible") %>%
-  group_by(seqid, locus) %>%
-  mutate(n_credsets = n_distinct(cs_id)) %>%
-  ungroup()
+  mutate(n_credsets = n_distinct(cs_id), .by = c(seqid, locus)) %>%
+  distinct(seqid, locus, n_credsets)
 
+cs_count %>%
+  left_join(
+    lb_believe_annot %>% select(seqid, locus, cis_or_trans),
+    join_by(seqid, locus)
+    ) %>%
+  #count(cis_or_trans)
+  summarize(sum(n_credsets), .by = cis_or_trans)
 
 
 #----------------------------#
@@ -52,7 +160,7 @@ cs_believe_count <- cs_believe %>%
 #----------------------------#
 
 # histogram of no. loci per CS size
-cs_believe_count %>%
+cs_count %>%
   distinct(seqid, locus, n_credsets) %>% # keep number of CS per locus
   ggplot(aes(x = n_credsets)) +
   geom_histogram(
@@ -61,32 +169,35 @@ cs_believe_count %>%
   ) +
   stat_count(
     aes(label=..count.., y=..count.. + 170),
-    geom = 'text', color = '#bd5734',
+    geom = 'text', color = 'gold', #'#bd5734'
     position = position_dodge(.9),
   ) +
   scale_x_continuous(
     breaks = c(1:10), expand = c(0,0) # remove space between plot and y-axis
     ) +
   scale_y_continuous(
-    breaks = c(seq(0, 6500, 500)), 
-    limits = c(0, 6900), expand = c(0,0) # remove space between plot and x-axis
+    breaks = c(seq(0, 6000, 500)), 
+    limits = c(0, 6400), expand = c(0,0) # remove space between plot and x-axis
   ) +
   labs(
-    x = "\nNumber of credible sets (excluding 21 without CS)",
+    x = "\nNumber of credible sets per pQTL (excluding 11 without CS)",
     y = "Number of loci\n"
   ) +
-  theme_light() +
+  theme_classic() +
   theme(
-    axis.title = element_text(size = 12, face = 2),
-    axis.text  = element_text(size = 11),
+    axis.title = element_text(size = 12, face = 2, color = "steelblue2"),
+    axis.text  = element_text(size = 11, color = "skyblue2"),
     axis.ticks.length = unit(2, "mm"),
-    panel.grid.minor = element_line(color = "white"),
-    panel.grid.major = element_line(color = "white")
-  )
+    #panel.grid.minor = element_line(color = "white"),
+    #panel.grid.major = element_line(color = "white")
+    plot.background  = element_rect(fill = "transparent", color = NA),
+    panel.background = element_rect(fill = "transparent", color = NA)
+    )
 
 
-ggsave("22-Jan-26_believe_susie_cs_count.jpg",
-       plot = last_plot(), width = 8, height = 6, dpi = 150)
+ggsave("03-Jun-26_believe_susie_cs_count.png", bg = "transparent",
+       plot = last_plot(), width = 8, height = 6, dpi = 300)
+
 
 
 #----------------------------#
@@ -120,136 +231,5 @@ cs_believe %>%
   labs(#x = "No. of Loci",
        y = "No. of SNPs in Credible Sets") +
   theme_minimal()
-
-
-#----------#
-# loci with missing susie fine-mapping
-list_locuseq <- list.files(
-  path = path_cslist,
-  pattern = "seq.(\\d)+.(\\d)+_(\\d)+_(\\d)+_(\\d)+.cslist$",
-  recursive = F, full.names = F
-)
-
-cslist_done <- tibble(list_locuseq) %>%
-  transmute(
-    locuseq = str_remove(list_locuseq, ".cslist"),
-    seqid = str_split_fixed(locuseq, "_", 2)[,1],
-    locus = str_split_fixed(locuseq, "_", 2)[,2]
-  )
-
-#----------#
-ld_matrices <- list.files(
-  path = glue(path_susie, "results/believe/tmp/"),
-  pattern = "seq.(\\d)+.(\\d)+_(\\d)+_(\\d)+_(\\d)+_ld.matrix$",
-  full.names = T
-) %>%
-  tibble() %>%
-  transmute(
-    ld_size_gb = file.size(.)/(1e9),
-    memory  = (ld_size_gb * 4.5 + 4)*1024,
-    locuseq = basename(.) %>% str_remove("_ld.matrix")
-    )
-
-write.csv(ld_matrices, "ld_matrix_size_required_mem.csv")
-
-
-#----------#
-list_report <- list.files(
-  path = glue(path_susie, "results/believe/susierss/cs_report"),
-  pattern = "seq.(\\d)+.(\\d)+_(\\d)+_(\\d)+_(\\d)+.report$",
-  full.names = T
-)
-
-# find other regions with literally similar SNPs size
-cs_report <- map_dfr(list_report[1:1000], fread)
-cs_report %>% filter(
-  #between(n_snp_pgen, 9200, 9300),
-  #between(n_snp_pgen, 14000, 15000),
-  between(n_snp_pgen, 50000, 56000),
-  )
-
-
-plot(cs_report$n_snp_pgen, cs_report$n_snp_gwas)
-hist(cs_report$n_snp_gwas, nclass = 30)
-
-
-list_report <- list.files(
-  path = glue(path_susie, "results/believe/susierss/cs_report"),
-  pattern = "seq.(\\d)+.(\\d)+_(\\d)+_(\\d)+_(\\d)+.report$",
-  full.names = T
-)
-
-# 9320 SNPs
-ld_matrices %>% filter(locuseq %in% locuseq2test)
-# A tibble: 2 × 3
-# ld_size_gb memory locuseq                         
-# <dbl>  <dbl> <chr>                           
-# 1      2.23  15527. seq.22834.21_1_196246962_198992…
-# 2      0.942  8917. seq.4440.15_1_156706526_1580416…  -- failed
-# 3                   seq.10754.113_6_27895071_32982423 (55,112snps) -- done
-# 4      29G  147Gb  seq.13689.2_6_28042655_32982423 (54,359snps) -- failed
-
-
-# [pqtl_susie]dariush.ghasemi@cnode33$ seff 26846416
-# Job ID: 26846416
-# Cluster: slurm
-# User/Group: dariush.ghasemi/diangelantonio
-# State: COMPLETED (exit code 0)
-# Cores: 1
-# CPU Utilized: 08:42:24
-# CPU Efficiency: 98.34% of 08:51:14 core-walltime
-# Job Wall-clock time: 08:51:14
-# Memory Utilized: 168.63 GB
-# Memory Efficiency: 74.07% of 227.68 GB
-
-
-
-
-
-ld_nsnps <- ld_matrices %>%
-  filter(locuseq != "seq.4440.15_1_156706526_158041681") %>%
-  mutate(
-    snpfile = paste0(path_susie, "results/believe/tmp/", locuseq, "_ld.headers")
-    ) %>%
-  rowwise() %>%
-  mutate(nsnps = fread(snpfile) %>% nrow()) %>%
-  select(-snpfile)
-
-plot(ld_nsnps$ld_size_gb, ld_nsnps$nsnps)
-  
-
-fread(glue(path_susie, "cs_list.believe")) %>%
-  transmute(locuseq = basename(cs_list) %>% str_remove(".cslist")) %>%
-  inner_join(ld_matrices, join_by(locuseq)) %>% View()
-
-locuseq2test <- c(
-  "seq.4440.15_1_156706526_158041681",
-  "seq.22834.21_1_196246962_198992432"
-)
-
-# loci to rerun
-lb_believe %>%
-  mutate(locuseq = paste0(seqid, "_", chr, "_", start, "_", end)) %>%
-  filter(!locuseq %in% cslist_done$locuseq) %>%
-  filter(loci_cat != ">5Mbp") %>%
-  select(-locuseq) %>% #count(loci_cat)
-  write.csv(glue(path_susie, "config/believe_loci_failed.csv"), row.names = F, quote = F)
-
-
-
-#----------------------------#
-#----  Sumstat with PIP  ----
-#----------------------------#
-
-list_cssums <- list.files(
-  path = path_pips,
-  pattern = "seq.(\\d)+.(\\d)+_(\\d)+_(\\d)+_(\\d)+.cssum$",
-  full.names = T
-)
-
-combined_cssums <- map_dfr(list_cssums, fread)
-
-# save combined sumstats with PIP for Giulia Pontali
-fwrite(combined_cssums, file = path_pips_combined, sep = "\t")
 
 
