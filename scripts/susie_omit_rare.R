@@ -10,7 +10,7 @@ path_ld_header <- glue(path_susie, "results/believe_nomir/tmp/", my_locuseq, "_l
 path_ld_matrix <- glue(path_susie, "results/believe_nomir/tmp/", my_locuseq, "_ld.matrix")
 
 # LD computed based on hardcall genotype (bed/bim/fam)
-path_ld_bed <- "/scratch/dariush.ghasemi/projects/pqtl_susie/plink_ld/ld/seq.9253.52_9_132740402_133566789_ld.headers"
+path_ld_bed <- glue(path_susie, "/plink_ld/ld/", my_locuseq, "_ld.headers")
 path_sumstat_bgen <- "/exchange/healthds/pQTL/BELIEVE/Working_shared/bgeno_assoc_phen_seq.9253.52_res/bgeno_assoc_phen_seq.9253.52_res.gwaslab.tsv.gz"
 
 
