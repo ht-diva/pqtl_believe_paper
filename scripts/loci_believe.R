@@ -27,7 +27,7 @@ lb_believe_annot <- fread(path_lb_woHLA) %>% arrange(chr, phenotype_id)
 chop_locus <- function(df){
   
   df %>%
-    #dplyr::rename(seqid = phenotype_id) %>%
+    dplyr::rename(seqid = phenotype_id) %>%
     mutate(
       locus = str_c("chr", chr, "_", start, "_", end),
       loci_width = end - start,
@@ -87,6 +87,21 @@ lb_believe_annot %>%
   # filter(loci_cat=="1-SNP")        # No cis 1-SNP region exist
   fwrite("believe/believe_loci_uniq_cis_4TRE.tsv", row.names = F, sep = "\t")
 
+
+lb_believe_4TRE <- list.files(
+  "/scratch/dariush.ghasemi/projects/pqtl_susie/ld/ld_matrix/",
+  pattern = "_ld.matrix"
+  ) %>%
+  data_frame("ldfile" = .) %>%
+  mutate(locus = str_c("chr", str_remove(ldfile, "_ld.matrix")))
+
+
+lb_believe_annot %>% 
+  select(chr:cis_or_trans, locus, loci_cat) %>%
+  filter(cis_or_trans == "cis",
+         locus %in% lb_believe_4TRE$locus) %>%
+  write.csv("/scratch/dariush.ghasemi/projects/pqtl_susie/config/gnh_93.csv",
+            quote = F, row.names = F)
 
 
 #-------------------------------#
