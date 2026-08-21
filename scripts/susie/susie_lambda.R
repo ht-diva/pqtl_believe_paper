@@ -108,7 +108,7 @@ sumstat %>%
 
 
 #----------------------------#
-# ----        GWAS       ----
+# ----       Lambda      ----
 #----------------------------#
 
 common_snps <- intersect(sumstat$SNP, ld_header$SNP)
@@ -120,14 +120,22 @@ n_believe <- min(sumstat$N)
 # The estimated λ is
 lambda <- susieR::estimate_s_rss(
   z = sumstat$Z,
-  R = R_plink,
+  R = R,
   #R = R_plink[common_snps, common_snps],
-  n = n_believe
+  #n = n_believe,
+  method = "null-pseudomle", # default = "null-mle", or "null-partialmle"
   )
 
 
+# Without specifying N, the estimated λ was:
+
+#  - method = "null-mle":        0.05005966
+#  - method = "null-pseudomle":  0.08724696
+#  - method = "null-partialmle": 0.00076204
+
+
 # plot for unrelated GWAS
-plt_kriging <- susieR::kriging_rss(z = sumstat$Z, R = R_plink, n = n_believe)
+plt_kriging_unadj <- susieR::kriging_rss(z = sumstat$Z, R = R) #, n = n_believe
 
 plt_kriging$plot +
   labs(
@@ -135,6 +143,21 @@ plt_kriging$plot +
     title = paste0(my_locuseq, "\nGWAS without QC"),
     subtitle = paste("λ =", signif(lambda, 4))
   )
+
+#----------#
+par(mfrow = c(1, 2))
+
+plot(
+  plt_kriging_unadj$conditional_dist$z, plt_kriging_unadj$conditional_dist$z_std_diff,
+  xlab= "Cond_Z", ylab = "Cond_Z_std_diff",
+  main = "Un-adjusted", #"Adjusted for N",
+  cex = 1, pch = 1 #lab = "Adjusted"
+  )
+
+abline(h = 0)
+abline(v = 0)
+
+dev.off()
 
 
 #----------------------------#
