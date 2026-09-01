@@ -91,21 +91,6 @@ sumstat <- ld_header %>%
 
 dim(sumstat)
 
-# Regional plot
-sumstat %>%
-  #dplyr::filter(P > 0.0000000001) %>%
-  #ggplot(aes(x = POS, y = -log10(P))) +
-  ggplot(aes(x = GENPOS, y = LOG10P)) +
-  geom_point(size = 3, fill = "#7e4a35", shape = 21) +
-  labs(x = "Genomic Position (hg38)") + 
-  #ggtitle(paste0(seqid_locus, "(size: ", my_locus$loci_cat,")")) + 
-  theme_light() +
-  theme(
-    axis.title = element_text(size = 14),
-    axis.text = element_text(size = 12),
-    axis.ticks.length = unit(2.5,"mm")
-  )
-
 
 #----------------------------#
 # ----       Lambda      ----
@@ -123,7 +108,7 @@ lambda <- susieR::estimate_s_rss(
   R = R,
   #R = R_plink[common_snps, common_snps],
   #n = n_believe,
-  method = "null-pseudomle", # default = "null-mle", or "null-partialmle"
+  #method = "null-pseudomle", # default = "null-mle", or "null-partialmle"
   )
 
 

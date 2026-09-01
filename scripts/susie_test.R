@@ -37,20 +37,6 @@ dim(sumstat)
 n_distinct(sumstat$SNPID)
 
 
-# Regional plot
-sumstat %>%
-  ggplot(aes(x = POS, y = MLOG10P)) +
-  geom_point(size = 3, fill = "#7e4a35", shape = 21) +
-  labs(x = "Genomic Position (hg38)") + 
-  #ggtitle(paste0(seqid_locus, "(size: ", my_locus$loci_cat,")")) + 
-  theme_light() +
-  theme(
-    axis.title = element_text(size = 14),
-    axis.text = element_text(size = 12),
-    axis.ticks.length = unit(2.5,"mm")
-  )
-
-
 ### LD matrix
 path_ld_matrix <- glue(path_gnh_ld, my_locus, "_ld.matrix")
 path_ld_header <- gsub(".matrix", ".header", path_ld_matrix)
@@ -77,14 +63,6 @@ heatmap(R, Rowv = NA, Colv = NA)
 # N in GWAS
 n_GnH <- min(sumstat$meta_total_samples, na.rm = TRUE)
 
-susieR::estimate_s_rss(
-  z = sumstat$BETA/sumstat$SE, R=R, n=9216
-)
-
-susieR::kriging_rss(
-  z = sumstat$BETA/sumstat$SE,
-  R = R, n = n_GnH
-)
 
 compute_ld_from_X <- FALSE
 susie_L <- 10
@@ -122,23 +100,9 @@ res_rss_score <- tryCatch(
 
 
 # Extract results
-full_res <- summary(res_rss)
+full_res <- summary(res_rss_score)
 cs   <- full_res$cs    # containing CS impurity indices
 vars <- full_res$vars  # containing CS Posterior Inclusion Probabilities
-
-
-
-# SuSiE Plot
-susieR::susie_plot(
-  res_rss,
-  y = "PIP",
-  b = betas,
-  xlab = "Variants",
-  add_bar = FALSE,
-  add_legend = TRUE,
-  main = paste("SeqID_locus:", my_locuseq) #, "\nmethod=score"
-)
-
 
 
 # list of the entire SNPs with PIP
@@ -163,4 +127,5 @@ cs_list <- cs_summary %>%
     .by = cs_id
   ) %>%
   full_join(cs, join_by(cs_id == cs))
+
 

@@ -136,21 +136,6 @@ susieR::kriging_rss(z = res_z, R = R_norare, n = n_believe)
 # ----  Hardcall vs Dosage  ----
 #-------------------------------#
 
-condz_dosage <- susieR::kriging_rss(
-  z = z_scores,
-  R = R,
-  n = n_believe
-  )
-
-
-# Plot + lambda
-qq_dosage <- condz_dosage$plot + 
-  labs(
-    #title = paste("SeqID-Locus= ", my_locuseq),
-    subtitle = paste("λ =", signif(lambda_dosage, 4), "| dosage")
-  )
-
-
 # Plots for GWAS-LD with MAF filter
 #qq_hardcall_norare <- qq_hardcall
 #qq_dosage_norare   <- qq_dosage
