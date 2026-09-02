@@ -120,6 +120,14 @@ cs_summary <- sumstat %>%
   left_join(cs[1:4], join_by(cs_id == cs)) %>%
   filter(cs_id > 0)
 
+cs_sum_plot <- cs_summary %>% mutate(
+  cs_id = factor(
+    cs_id,
+    levels = sort(unique(cs_id)),
+    labels = paste0("L", sort(unique(cs_id))),
+    ordered = TRUE
+  ))
+
 # list of CS variants
 cs_list <- cs_summary %>%
   summarize(

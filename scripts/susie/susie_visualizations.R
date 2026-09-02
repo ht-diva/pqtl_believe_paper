@@ -1,3 +1,4 @@
+
 #=============================#
 # September 1, 2026
 # Dariush Ghasemi
@@ -17,14 +18,18 @@ library(ggpubr)
 # Regional plot
 plt_lz <- sumstat %>%
   ggplot(aes(x = POS, y = MLOG10P)) +
-  geom_point(size = 3, fill = "#FDC700", shape = 21) +
+  geom_point(size = 3, color = "#FDC700", shape = 16, alpha = .6) +
+  geom_point(data = cs_sum_plot, aes(color = cs_id), size = 4, shape = 21, stroke = 1.3) +
   scale_x_continuous(labels = function(x) round(x/1e6, 2)) +
+  scale_color_discrete() +
   labs(
     title = paste("Region:", my_locuseq),
     x = "Genomic Position (Mb)"
     ) + 
   theme_light() +
   theme(
+    legend.position = c(.85, .55),
+    legend.background = element_blank(),
     plot.title = element_text(size = 10, face = 2, hjust = 0.5),
     axis.title = element_text(size = 12),
     axis.text = element_text(size = 9),
