@@ -10,17 +10,19 @@ library(tidyverse)
 
 # Base directory
 path_susie <- "/scratch/dariush.ghasemi/projects/pqtl_susie/"
+path_group <- "/group/diangelantonio/users/dariush/results/"
 
 # Latest susie run on Believe's pQTLs
-path_pip_report <- glue(path_susie, "results/believe_estVarF/susierss/combined_reports.tsv")
+path_pip_report <- glue(path_group, "pqtl_susie/believe_estVarF/susierss/combined_reports.tsv")
 
 # Report of loci with Negative Variance
 path_report_negvar <-  glue(path_susie, "results/believe_negvar_89loci/susierss/combined_reports.tsv")
+path_repott_issu11 <-  glue(path_susie, "results/issue_11/susierss/combined_reports.tsv")
 
 # Read report file
 cs_report        <- fread(path_pip_report)
 cs_report_negvar <- fread(path_report_negvar)
-
+cs_report_issu11 <- fread(path_repott_issu11)
 
 list_report <- list.files(
   path = glue(path_susie, "results/believe_estVarF/susierss/cs_report"),
@@ -148,6 +150,35 @@ cs_report %>%
 
 
 ggsave("18-May-26_est_var_comparison.png", width = 7, height = 7, dpi = 200)
+
+
+# Assess effectiveness of score option in reducing Lambda
+cs_report_negvar %>%
+  select(seqid, locus, lambda) %>%
+  inner_join(
+    cs_report_issu11 %>% select(seqid, locus, lambda),
+    join_by(seqid, locus),
+    suffix = c("_default", "_score")
+    ) %>%
+  # pivot_longer(
+  #   cols = starts_with("lambda"),
+  #   names_to = "method",
+  #   values_to = "lambda"
+  #   ) %>%
+  #slice_max(lambda_score, n = 10)
+  ggplot(aes(lambda_default, lambda_score)) +
+  geom_point(size = 3.5, fill = "#FDC700", shape = 21) +
+  geom_abline(slope = 1, lty = 2) +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  labs(x = "λ with default params",
+       y = "λ with score option",
+       title = "Lambda accounted for Z-scores from LLM",
+       subtitle = "(37 highly significant pQTLs)") +
+  theme_light()
+
+ggsave("02-Sep-26_lambda_comparison_score_option.png",
+       width = 7.5, height = 6.5, dpi = 200)
 
 
 
