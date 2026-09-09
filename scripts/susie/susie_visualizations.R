@@ -49,9 +49,18 @@ condz <- susieR::kriging_rss(z = z_scores, R = R)
 
 # Plot + lambda
 plt_kriging <- condz$plot + 
+  annotate(
+    "text",
+    label = paste0("λ = ", signif(lambda, 4)),
+    hjust = "right",
+    vjust = "bottom",
+    size = 4,
+    x = Inf,
+    y = -Inf
+  ) +
   labs(
     #title = paste("SeqID-Locus= ", my_locuseq),
-    title = paste0("LD matrix consistency with Z-scores (λ=", signif(lambda, 4), ")")
+    title = paste0("LD matrix consistency with Z-scores")
   ) +
   theme_light() +
   theme(
