@@ -17,12 +17,15 @@ path_pip_report <- glue(path_group, "pqtl_susie/believe_estVarF/susierss/combine
 
 # Report of loci with Negative Variance
 path_report_negvar <-  glue(path_susie, "results/believe_negvar_89loci/susierss/combined_reports.tsv")
-path_repott_issu11 <-  glue(path_susie, "results/issue_11/susierss/combined_reports.tsv")
+path_report_issu11 <-  glue(path_susie, "results/issue_11/susierss/combined_reports.tsv")
+path_report_bgen   <-  glue(path_susie, "results/believe_bgen/susierss/combined_reports.tsv")
 
 # Read report file
 cs_report        <- fread(path_pip_report)
 cs_report_negvar <- fread(path_report_negvar)
-cs_report_issu11 <- fread(path_repott_issu11)
+cs_report_issu11 <- fread(path_report_issu11)
+cs_report_bgen   <- fread(path_report_bgen)
+
 
 list_report <- list.files(
   path = glue(path_susie, "results/believe_estVarF/susierss/cs_report"),
@@ -156,9 +159,9 @@ ggsave("18-May-26_est_var_comparison.png", width = 7, height = 7, dpi = 200)
 cs_report_negvar %>%
   select(seqid, locus, lambda) %>%
   inner_join(
-    cs_report_issu11 %>% select(seqid, locus, lambda),
+    cs_report_bgen %>% select(seqid, locus, lambda),
     join_by(seqid, locus),
-    suffix = c("_default", "_score")
+    suffix = c("_default_pgen", "_score_bgen")
     ) %>%
   # pivot_longer(
   #   cols = starts_with("lambda"),
@@ -166,18 +169,22 @@ cs_report_negvar %>%
   #   values_to = "lambda"
   #   ) %>%
   #slice_max(lambda_score, n = 10)
-  ggplot(aes(lambda_default, lambda_score)) +
-  geom_point(size = 3.5, fill = "#FDC700", shape = 21) +
-  geom_abline(slope = 1, lty = 2) +
+  ggplot(aes(lambda_default_pgen, lambda_score_bgen)) +
+  #geom_abline(slope = 1, lty = 2) +
   geom_hline(yintercept = 0) +
   geom_vline(xintercept = 0) +
-  labs(x = "λ with default params",
-       y = "λ with score option",
-       title = "Lambda accounted for Z-scores from LLM",
-       subtitle = "(37 highly significant pQTLs)") +
+  geom_point(size = 5.5, fill = "#9043B7", color = "#FDC700", shape = 21) +
+  scale_x_continuous(breaks = seq(0, .36, .05)) +
+  scale_y_continuous(breaks = seq(0, .0000015, .0000002)) +
+  labs(
+    x = "λ with default params + PGEN GWAS",
+    y = "λ with score option + BGEN GWAS",
+    title = "Lambda accounted for Z-scores from BGEN vs PGEN GWAS",
+    subtitle = "(37 highly significant pQTLs)"
+    ) +
   theme_light()
 
-ggsave("02-Sep-26_lambda_comparison_score_option.png",
+ggsave("09-Sep-26_lambda_comparison_score_option_bgen_gwas.png",
        width = 7.5, height = 6.5, dpi = 200)
 
 
