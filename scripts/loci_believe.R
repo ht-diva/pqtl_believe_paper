@@ -5,12 +5,16 @@ library(data.table)
 path_lb_pipe <- "/scratch/dariush.ghasemi/projects/pqtl_conditional/results/believe_hla/combined_loci.csv"
 #path_lb_annot <- "/exchange/healthds/pQTL/BELIEVE/Working_shared/LB/mapped_LB_gp_ann_va_ann_bl_ann_collapsed_hf_ann.csv"
 path_lb_woHLA <- "/exchange/healthds/pQTL/BELIEVE/Working_shared/LB/mapped_LB_gp_ann_va_ann_bl_ann_collapsed_hf_ann_wo_HLA.csv"
+path_lb_bgen <- "/scratch/solene.cadiou/LB_Believe_bgen/pqtl_downstream/results_bgen_LB_corrected_mapping/mapped_LB.csv"
+
 
 path_lb_out <- "/scratch/dariush.ghasemi/projects/pqtl_coloc/config/19-Nov-25_believe_loci.csv"
 path_lb_susie <- "/scratch/dariush.ghasemi/projects/pqtl_susie/config/believe_loci.csv"
 path_lb_out_cis <- "/scratch/dariush.ghasemi/projects/pqtl_coloc/config/believe_loci_cis.csv"
 path_lb_out_large <- "/scratch/dariush.ghasemi/projects/pqtl_locuszoom/conf/believe_loci_large.csv"
 path_lb_test_gnh <- "believe_loci_test_gnh.csv"
+path_lb_out_bgen <- "/scratch/dariush.ghasemi/projects/pqtl_susie/config/believe_loci_bgen.csv"
+
 
 plt_hist <- "26-Feb-26_histogram_loci_width_believe.png"
 plt_hla <- "26-Feb-26_histogram_loci_width_believe_HLA_comparison.png"
@@ -22,13 +26,16 @@ plt_vioin <- "19-Nov-25_density_loci_width_believe.png"
 
 lb_believe <- fread(path_lb_pipe)
 lb_believe_annot <- fread(path_lb_woHLA) %>% arrange(chr, phenotype_id)
+lb_bgen <- fread(path_lb_bgen)
 
 
 chop_locus <- function(df){
   
   df %>%
     dplyr::rename(seqid = phenotype_id) %>%
+    #dplyr::select(-V1, -V2) %>% 
     mutate(
+      #seqid = str_remove_all(seqid, "bgeno_assoc_phen_|_res"),
       locus = str_c("chr", chr, "_", start, "_", end),
       loci_width = end - start,
       loci_cat = case_when(
@@ -47,9 +54,12 @@ chop_locus <- function(df){
 # Categorize loci
 lb_believe <- lb_believe %>% chop_locus()
 lb_believe_annot <- lb_believe_annot %>% chop_locus()
+lb_bgen <- lb_bgen %>% chop_locus()
 
 
 write.csv(lb_believe, file = path_lb_out, quote = F, row.names = F)
+write.csv(lb_bgen, file = path_lb_out_bgen, quote = F, row.names = F)
+
 
 # to run SuSiE
 lb_believe_annot %>% 
