@@ -14,6 +14,7 @@ path_lb_out_cis <- "/scratch/dariush.ghasemi/projects/pqtl_coloc/config/believe_
 path_lb_out_large <- "/scratch/dariush.ghasemi/projects/pqtl_locuszoom/conf/believe_loci_large.csv"
 path_lb_test_gnh <- "believe_loci_test_gnh.csv"
 path_lb_out_bgen <- "/scratch/dariush.ghasemi/projects/pqtl_susie/config/believe_loci_bgen.csv"
+path_lb_hla_bgen <- "/scratch/dariush.ghasemi/projects/pqtl_susie/config/believe_nohla_bgen.csv"
 
 
 plt_hist <- "26-Feb-26_histogram_loci_width_believe.png"
@@ -33,9 +34,9 @@ chop_locus <- function(df){
   
   df %>%
     dplyr::rename(seqid = phenotype_id) %>%
-    #dplyr::select(-V1, -V2) %>% 
+    dplyr::select(-V1, -V2) %>%
     mutate(
-      #seqid = str_remove_all(seqid, "bgeno_assoc_phen_|_res"),
+      seqid = str_remove_all(seqid, "bgeno_assoc_phen_|_res"),
       locus = str_c("chr", chr, "_", start, "_", end),
       loci_width = end - start,
       loci_cat = case_when(
@@ -56,9 +57,16 @@ lb_believe <- lb_believe %>% chop_locus()
 lb_believe_annot <- lb_believe_annot %>% chop_locus()
 lb_bgen <- lb_bgen %>% chop_locus()
 
+hla.start <- 28510120
+hla.end   <- 33480577
+
+# Remove loci overlapping HLA region
+lb_bgen <- lb_bgen %>%
+  filter(!(chr == 6 & !(end < hla.start | start > hla.end)))
+
 
 write.csv(lb_believe, file = path_lb_out, quote = F, row.names = F)
-write.csv(lb_bgen, file = path_lb_out_bgen, quote = F, row.names = F)
+write.csv(lb_bgen, file = path_lb_hla_bgen, quote = F, row.names = F)
 
 
 # to run SuSiE
