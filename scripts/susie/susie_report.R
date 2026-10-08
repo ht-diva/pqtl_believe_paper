@@ -28,7 +28,7 @@ cs_report_bgen   <- fread(path_report_bgen)
 
 
 list_report <- list.files(
-  path = glue(path_susie, "results/believe_estVarF/susierss/cs_report"),
+  path = glue(path_susie, "results/believe_bgen/susierss/cs_report"),
   pattern = "seq.(\\d)+.(\\d)+_(\\d)+_(\\d)+_(\\d)+.report$",
   full.names = T
 )
@@ -48,17 +48,28 @@ hist(cs_report$lambda, nclass = 100)
 # Box plot + histogram 
 cs_report %>%
   left_join(
-    lb_believe_annot %>% select(seqid, locus, cis_or_trans, loci_width, loci_cat),
+    lb_bgen %>% select(seqid, locus, cis_or_trans, loci_width, loci_cat),
     join_by(seqid, locus)
   ) %>%
-  mutate(loci_order = factor(loci_cat, levels = level_order)) %>% 
+  mutate(
+    lambda = as.numeric(lambda),
+    loci_order = factor(loci_cat, levels = level_order)
+    ) %>%
   ggplot() +
-  #geom_boxplot(aes(x = lambda)) +
-  geom_histogram(aes(x = lambda), color="white", bins = 50) +
+  #geom_boxplot(aes(y = lambda)) +
+  #geom_histogram(aes(x = lambda), color="white", bins = 50) +
   #\scale_x_continuous(breaks = seq(0, 0.41, 0.05))+
   #geom_boxplot(aes(x = loci_order, y = lambda)) +
-  theme_light() +
-  labs(x = "λ", y = "#Loci")
+  geom_point(aes(x = loci_width, y = lambda)) +
+  labs(
+    x = "Locus size",
+    y = "λ",
+    #y = "#Loci",
+    #title = "Lambda index for possible LD-GWAS misalignment (9211 pQTLs from BGEN)"
+    title = "Lambda vs. locus size"
+    ) +
+  theme_light()
+
 
 ggsave("10-Jun-26_histogram_lambda.png", width = 8, height = 7, dpi = 200)
 
