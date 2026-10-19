@@ -6,31 +6,15 @@
 # lambda issue for BELIEVE's pQTLs.
 #=============================#
 
-path_gwas <- "/group/diangelantonio/users/Solene/pQTL/BELIEVE/gcta_dosage/bgeno_assoc_phen_seq.9253.52_res.fastGWA"
-path_gwas_regenie <- "/exchange/healthds/pQTL/pQTL_workplace/regenie_unrelated_samples/test_targets_1_2_output/test_targets_1_2/results/gwas/seq.9253.52_res.gwas.regenie.gz"
-path_gwas_noqc <- "/exchange/healthds/pQTL/pQTL_workplace/regenie_unqced/test_targets_1_2_output/test_targets_1_2/results/gwas/seq.9253.52_res.gwas.regenie.gz"
-
-path_geno  <- "/center/healthds/pQTL/BELIEVE/Genetic_QC_files/HDS_BELIEVE_final_HDS.pgen"
-path_susie <- "/scratch/dariush.ghasemi/projects/pqtl_susie/"
-
-
-my_locuseq <- "seq.9253.52_9_132740402_133566789" # lambda 0.2645
-my_chr <- str_split_fixed(my_locuseq, "_", 4)[[2]]
-my_beg <- str_split_fixed(my_locuseq, "_", 4)[[3]]
-my_end <- str_split_fixed(my_locuseq, "_", 4)[[4]]
 
 
 #----------------------------#
 # ----   LD with PLINK   ----
 #----------------------------#
 
-#path_geno_pgen <- glue(path_susie, "plink_ld/no_harm/", my_locuseq, ".pgen")
-path_ld_header <- glue(path_susie, "plink_ld/no_harm/", my_locuseq, ".unphased.vcor1.vars")
-path_ld_matrix <- glue(path_susie, "plink_ld/no_harm/", my_locuseq, ".unphased.vcor1")
-
 # load LD matrix created from PGEN
-ld_header <- fread(path_ld_header, header = FALSE, col.names = "SNP")
-R_plink   <- fread(path_ld_matrix, header = F, data.table = F) %>% as.matrix()
+ld_header <- fread(path_ld_header_noharm, header = FALSE, col.names = "SNP")
+R_plink   <- fread(path_ld_matrix_noharm, header = F, data.table = F) %>% as.matrix()
 rownames(R_plink) <- colnames(R_plink) <- ld_header$SNP
 
 dim(R_plink)
@@ -41,8 +25,8 @@ dim(R_plink)
 
 # Read psam & pvar
 #geno_pgen <- pgenlibr::NewPgen(path_geno_pgen)
-#psam_df <- str_replace(path_geno_pgen, ".pgen", ".psam") %>% read.delim(header = TRUE, comment.char = "")
-#pvar_df <- str_replace(path_geno_pgen, ".pgen", ".pvar") %>% read.delim(header = TRUE, comment.char = "")
+#psam_df <- read.delim(path_geno_psam, header = TRUE, comment.char = "")
+#pvar_df <- read.delim(header = TRUE, comment.char = "")
 
 # Extract dosages for all of variants
 #dosage <- pgenlibr::ReadList(geno_pgen, 1:nrow(pvar_df), meanimpute = FALSE)
