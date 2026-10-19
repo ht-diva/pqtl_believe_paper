@@ -6,7 +6,7 @@ path_cs_believe <- glue(path_susie, "results/believe_nomir/susierss/cs_list")
 path_pips <- glue(path_susie, "results/believe_test/susierss/cs_summary")
 path_pips_combined <- glue(path_susie, "results/believe_test/susierss/combined_cssums.tsv")
 
-path_pip_cslist <- glue(path_susie, "results/believe_estVarF/susierss/combined_credibles.tsv")
+path_pip_cslist <- glue(path_susie, "results/believe_bgen/susierss/combined_full/combined_credibles.tsv")
 
 
 #----------------------------#
@@ -64,7 +64,7 @@ cs_believe %>% distinct(seqid, locus) %>% dim()
 
 # Believe study loci whose job got this error:
 # Error: Estimating residual variance failed: the estimated value is negative
-lb_believe_annot %>%
+lb_bgen %>%
   dplyr::mutate(locus = str_c("chr", chr, "_", start, "_", end)) %>%
   #select(seqid, locus) %>%
   left_join(
@@ -87,7 +87,7 @@ cs_believe_sum <- cs_believe %>%
   filter(cs_id != "no_credible") %>%
   select(- cs_snps) %>%
   summarize(
-    n_cs   = n_distinct(cs_id),
+    nset   = n_distinct(cs_id),
     n_snps = sum(ncs),
     cs_power = mean(cs_log10bf),
     cs_avgr2 = mean(cs_avg_r2),
@@ -103,7 +103,7 @@ cs_believe %>%
   distinct(seqid, locus) %>%
   # cis/trans annotation
   left_join(
-    lb_believe_annot %>% select(seqid, locus, cis_or_trans),
+    lb_bgen %>% select(seqid, locus, cis_or_trans),
     join_by(seqid, locus)
   ) %>%
   count(cis_or_trans)
@@ -122,6 +122,19 @@ cs_believe %>%
   ) %>%
   count(ncs, name = "n_pQTLs")
 
+
+# Credible set size (IQR)
+quantile(cs_believe$ncs)
+summary(cs_believe$ncs)
+
+# Singleton CS
+cs_believe %>%
+  filter(cs_id != "no_credible",
+         ncs == 1
+         ) %>%
+  distinct(seqid, locus)
+  
+
 # pQTLs with >1 CS
 cs_believe %>%
   filter(cs_id != "no_credible") %>% #head(200) %>%
@@ -132,7 +145,7 @@ cs_believe %>%
   #filter(onesnp_cs) %>% distinct(seqid, locus) # 2470 loci with 1-SNP CS
   distinct(seqid, locus, secondary, onesnp_cs) %>% # 10,319 rows
   left_join(
-    lb_believe_annot %>% select(seqid, locus, cis_or_trans),
+    lb_bgen %>% select(seqid, locus, cis_or_trans),
     join_by(seqid, locus)
   ) %>%
   #count(cis_or_trans, secondary) # CS=1: 362 cis, 5513 trans; CS>1: 1143 cis, 1875 trans
@@ -146,9 +159,11 @@ cs_count <- cs_believe %>%
   mutate(n_credsets = n_distinct(cs_id), .by = c(seqid, locus)) %>%
   distinct(seqid, locus, n_credsets)
 
+summary(cs_count$n_credsets)
+
 cs_count %>%
   left_join(
-    lb_believe_annot %>% select(seqid, locus, cis_or_trans),
+    lb_bgen %>% select(seqid, locus, cis_or_trans),
     join_by(seqid, locus)
     ) %>%
   #count(cis_or_trans)
@@ -164,23 +179,24 @@ cs_count %>%
   distinct(seqid, locus, n_credsets) %>% # keep number of CS per locus
   ggplot(aes(x = n_credsets)) +
   geom_histogram(
-    stat = "count", fill = "#b9936c",
+    stat = "count", 
+    fill = "#3a6f81", # "#b9936c",
     position = position_dodge(0.9, preserve = 'single')
   ) +
   stat_count(
     aes(label=..count.., y=..count.. + 170),
-    geom = 'text', color = 'gold', #'#bd5734'
+    geom = 'text', color = "#cecbc9", # '#bd5734'
     position = position_dodge(.9),
   ) +
   scale_x_continuous(
     breaks = c(1:10), expand = c(0,0) # remove space between plot and y-axis
     ) +
   scale_y_continuous(
-    breaks = c(seq(0, 6000, 500)), 
-    limits = c(0, 6400), expand = c(0,0) # remove space between plot and x-axis
+    breaks = c(seq(0, 6500, 500)), 
+    limits = c(0, 6600), expand = c(0,0) # remove space between plot and x-axis
   ) +
   labs(
-    x = "\nNumber of credible sets per pQTL (excluding 11 without CS)",
+    x = "\nNumber of credible sets per pQTL (excluding 12)",
     y = "Number of loci\n"
   ) +
   theme_classic() +
@@ -195,7 +211,7 @@ cs_count %>%
     )
 
 
-ggsave("03-Jun-26_believe_susie_cs_count.png", bg = "transparent",
+ggsave("15-Oct-26_believe_susie_cs_count.png", bg = "transparent",
        plot = last_plot(), width = 8, height = 6, dpi = 300)
 
 
