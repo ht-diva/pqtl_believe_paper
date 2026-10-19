@@ -146,12 +146,14 @@ plt_cs_ld <- ggcorrplot(
 # Combine plots
 ggpubr::ggarrange(
   plt_lz,
-  plt_kriging,
-  plt_cs,
-  plt_cs_ld,
+  #plt_kriging,
+  #plt_cs,
+  #plt_cs_ld,
   nrow = 2,
   ncol = 2,
   #align = "hv",
+  labels = c("a", "b", "c", "d"),
+  font.label = list(size = 14, color = "black", face = "bold", family = NULL),
   heights = c(1, 1)
 )
 
