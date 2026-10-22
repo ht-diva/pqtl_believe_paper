@@ -17,7 +17,7 @@ path_lb_out_bgen <- "/scratch/dariush.ghasemi/projects/pqtl_susie/config/believe
 path_lb_hla_bgen <- "/scratch/dariush.ghasemi/projects/pqtl_susie/config/believe_nohla_bgen.csv"
 
 
-plt_hist <- "26-Feb-26_histogram_loci_width_believe.png"
+plt_hist <- "22-Oct-26_histogram_loci_width_believe_bgen.png"
 plt_hla <- "26-Feb-26_histogram_loci_width_believe_HLA_comparison.png"
 plt_vioin <- "19-Nov-25_density_loci_width_believe.png"
 
@@ -60,7 +60,7 @@ lb_bgen <- lb_bgen %>% chop_locus()
 hla.start <- 28510120
 hla.end   <- 33480577
 
-# Remove loci overlapping HLA region
+# Remove 773 loci overlapping HLA region
 lb_bgen <- lb_bgen %>%
   filter(!(chr == 6 & !(end < hla.start | start > hla.end)))
 
@@ -130,17 +130,18 @@ hist(lb_believe$loci_width, nclass = 50)
 lb_believe %>% count(loci_cat)
 
 # Size of the largest locus in Believe
-mx_lb <- round(max(lb_believe$loci_width)/10^6, 1)
+mx_lb <- round(max(lb_bgen$loci_width)/10^6, 1)
+n_loci <- nrow(lb_bgen)
 
 level_order <- c('1-SNP', '1bp-100Kbp', '100-500Kbp', '500K-1Mbp', '1-2Mbp', '2-5Mbp', '>5Mbp')
 
-lb_believe %>%
+lb_bgen %>%
   ggplot(aes(factor(loci_cat, levels = level_order))) +
   geom_histogram(stat = "count", color = "#003421", fill = "#095F54") +
   stat_count(
     binwidth = 1, 
     geom = 'text', 
-    color = '#E69F00', 
+    color = 'grey40', #'#E69F00', 
     #aes(label = after_stat(count)),
     #position = position_nudge(vjust = 0),
     aes(label=..count.., y=..count.. + 130)
@@ -150,12 +151,14 @@ lb_believe %>%
     x = paste0("\nLocus Size (max: ", mx_lb, " Mbp)"),
     y = "#Loci"
   ) +
-  ggtitle("8,910 Loci in Believe Study (excluding HLA)") +
+  ggtitle(paste0(n_loci, " Loci in Believe Study (excluding 773 HLA)")) +
   theme_light() +
   theme(
     axis.ticks.length = unit(2, "mm"),
     axis.title  = element_text(size = 13, face = 1),
-    axis.text.x = element_text(size = 11, face = 1)
+    axis.text.x = element_text(size = 11, face = 1),
+    plot.background  = element_rect(fill = "transparent", color = NA),
+    panel.background = element_rect(fill = "transparent", color = NA)
   )
 
 
