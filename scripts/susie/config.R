@@ -51,3 +51,11 @@ path_geno  <- "/center/healthds/pQTL/BELIEVE/Genetic_QC_files/HDS_BELIEVE_final_
 headers <- c("CHR", "POS", "SNPID", "EA", "NEA", "EAF", "BETA", "SE", "P", "MLOG10P", "N", "Z")
 
 
+# Params to reproduce SuSiE pipe
+compute_ld_from_X <- FALSE
+susie_L <- 10
+susie_iter <- 1000
+susie_min_abs_cor <- 0.5
+susie_est_resvar <- FALSE  # TRUE if using in-sample LD
+
+

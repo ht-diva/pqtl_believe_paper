@@ -36,6 +36,8 @@ sumstat <- sumstat %>%
 dim(sumstat)
 n_distinct(sumstat$SNPID)
 
+## RDS
+res_rss <- readRDS(path_susie_obj)
 
 ### LD matrix
 path_ld_matrix <- glue(path_gnh_ld, my_locus, "_ld.matrix")
@@ -64,11 +66,6 @@ heatmap(R, Rowv = NA, Colv = NA)
 n_GnH <- min(sumstat$meta_total_samples, na.rm = TRUE)
 
 
-compute_ld_from_X <- FALSE
-susie_L <- 10
-susie_iter <- 1000
-susie_min_abs_cor <- 0.5
-susie_est_resvar <- FALSE  # TRUE if using in-sample LD
 
 # Check point
 identical(sumstat$SNPID, rownames(R))
