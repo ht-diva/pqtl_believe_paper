@@ -6,6 +6,8 @@ library(data.table)
 
 my_locuseq <- "seq.9253.52_9_132740402_133566789" # lambda 0.2645
 my_locuseq <- "seq.8309.12_3_45982252_52219282"
+my_locuseq <- "seq.3206.4_11_10500217_10698007" # from config/believe_test.csv
+my_locuseq <- "seq.11563.51_3_165718150_166124518" # NO CS
 
 my_chr <- str_split_fixed(my_locuseq, "_", 4)[[2]]
 my_beg <- str_split_fixed(my_locuseq, "_", 4)[[3]]
@@ -13,7 +15,7 @@ my_end <- str_split_fixed(my_locuseq, "_", 4)[[4]]
 
 path_susie <- "/scratch/dariush.ghasemi/projects/pqtl_susie/"
 path_workspace <- "results/believe_nomir/tmp/"
-path_workspace <- "results/believe_bgen/tmp/"
+path_workspace <- "results/believe_bgen_test/tmp/"
 path_fitness <- "results/believe_bgen/susierss/cs_fitness/"
 
 path_sumstat   <- glue(path_susie, path_workspace, my_locuseq, "_sumstat.csv")
@@ -46,6 +48,6 @@ path_geno  <- "/center/healthds/pQTL/BELIEVE/Genetic_QC_files/HDS_BELIEVE_final_
 
 
 # Believe
-headers <- c("CHR", "POS", "SNPID", "EA", "NEA", "EAF", "BETA", "SE", "P", "MLOG10P", "Z")
+headers <- c("CHR", "POS", "SNPID", "EA", "NEA", "EAF", "BETA", "SE", "P", "MLOG10P", "N", "Z")
 
 
