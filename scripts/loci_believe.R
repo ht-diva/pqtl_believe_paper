@@ -81,7 +81,7 @@ lb_believe %>%
   spread(cis_or_trans, n) %>% DT::datatable()
 
 # save cis loci -- last save on 20-Apr-26
-lb_believe_annot %>%
+lb_bgen %>%
   dplyr::filter(cis_or_trans == "cis") %>%
   dplyr::select(chr:cis_or_trans) %>%
   chop_locus() %>% 
@@ -98,12 +98,16 @@ lb_believe %>%
 
 
 # Unique cis pQTLs to compute LD in G&H TRE
-lb_believe_annot %>% 
-  select(chr:end, cis_or_trans, loci_cat) %>%
-  distinct() %>%  # count(loci_cat)  # Ended with 4958 unique regions
-  filter(cis_or_trans == "cis") %>%
+# With BGEN loci, we ended up with 1482 unique cis regions
+# We will extend our region in the LD pipe on TRE
+# Last update: 28 Oct 2026
+lb_bgen %>%
+  dplyr::filter(cis_or_trans == "cis") %>%
+  dplyr::select(chr:end, loci_cat) %>%
+  distinct() %>% # count(loci_cat)
   # filter(loci_cat=="1-SNP")        # No cis 1-SNP region exist
-  fwrite("believe/believe_loci_uniq_cis_4TRE.tsv", row.names = F, sep = "\t")
+  fwrite("believe/believe_loci_uniq_cis_bgen_4TRE.tsv",
+         row.names = F, sep = "\t")
 
 
 lb_believe_4TRE <- list.files(
