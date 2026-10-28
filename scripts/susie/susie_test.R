@@ -73,7 +73,7 @@ identical(sumstat$SNPID, rownames(R))
 
 err_handling <- function(e) { stop("❌ SuSiE failed: ", e$message) }
 
-res_rss_score <- tryCatch(
+res_rss <- tryCatch(
   susie_rss(
     #bhat = sumstat$BETA,
     #shat = sumstat$SE,
@@ -97,7 +97,7 @@ res_rss_score <- tryCatch(
 
 
 # Extract results
-full_res <- summary(res_rss_score)
+full_res <- summary(res_rss)
 cs   <- full_res$cs    # containing CS impurity indices
 vars <- full_res$vars  # containing CS Posterior Inclusion Probabilities
 
