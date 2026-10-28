@@ -16,7 +16,7 @@ my_end <- str_split_fixed(my_locuseq, "_", 4)[[4]]
 path_susie <- "/scratch/dariush.ghasemi/projects/pqtl_susie/"
 path_workspace <- "results/believe_nomir/tmp/"
 path_workspace <- "results/believe_bgen_test/tmp/"
-path_fitness <- "results/believe_bgen/susierss/cs_fitness/"
+path_fitness <- "results/believe_bgen_test/susierss/cs_fitness/"
 
 path_sumstat   <- glue(path_susie, path_workspace, my_locuseq, "_sumstat.csv")
 path_ld_header <- glue(path_susie, path_workspace, my_locuseq, "_ld.headers")
