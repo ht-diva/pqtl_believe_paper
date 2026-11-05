@@ -3,10 +3,8 @@
 path_susie <- "/scratch/dariush.ghasemi/projects/pqtl_susie/"
 path_cs_believe <- glue(path_susie, "results/believe_nomir/susierss/cs_list")
 
-path_pips <- glue(path_susie, "results/believe_test/susierss/cs_summary")
-path_pips_combined <- glue(path_susie, "results/believe_test/susierss/combined_cssums.tsv")
 
-path_pip_cslist <- glue(path_susie, "results/believe_bgen/susierss/combined_full/combined_credibles.tsv")
+path_pip_cslist <- glue(path_susie, "results/believe_bgen/susierss/combined_credibles.tsv")
 
 
 #----------------------------#
@@ -32,28 +30,6 @@ cslist_class <- c(rep("character",3), rep("numeric",4), "character")
 cs_believe <- map_dfr(cs_lists_believe, 
                       ~ fread(.x, colClasses = cslist_class))
 
-
-#----------------------------#
-#----     CS Sumstats    ----
-#----------------------------#
-
-# Sumstats of credible sets variants along with PIP
-list_cssums <- list.files(
-  path = path_pips,
-  pattern = "seq.(\\d)+.(\\d)+_(\\d)+_(\\d)+_(\\d)+.cssum$",
-  full.names = T
-)
-
-combined_cssums <- map_dfr(list_cssums, function(path) {
-  filename <- basename(path) %>% gsub('.cssum', '', .)
-  fread(path) %>% 
-    mutate(seqid_locus = filename) %>% 
-    relocate(seqid_locus)
-}
-)
-
-# Save combined sumstats with PIP for Giulia Pontali
-fwrite(combined_cssums, file = path_pips_combined, sep = "\t")
 
 
 #----------------------------#
